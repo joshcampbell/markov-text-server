@@ -1,6 +1,7 @@
 #!/usr/bin/env python2.7
 
 from flask import Flask, request
+from flask_cors import cross_origin
 from memoize import wraps as memoize
 from dadapy.markov import MarkovDictionary
 
@@ -43,6 +44,7 @@ def index():
   """
 
 @app.route("/markov", methods=['POST'])
+@cross_origin()
 def markov():
   return MarkovDictionary(request.get_data()).disgorge(600)
 

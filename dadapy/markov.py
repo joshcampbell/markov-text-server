@@ -7,17 +7,17 @@ from Queue import Queue
 
 from dadapy.cleaner import clean
 
-class nGram:
+class nGramBuffer:
     """ Mutable n-gram class for use in markov dictionaries.
         the idea is that it's filled one word at a time as
-        the code consuming it iterates on a list of words.
+        we iterate across the source text.
     """
 
     def __init__(self, n):
         self.n = n
         self.words = []
 
-    def is_full():
+    def is_full(self):
         return len(self.words) == self.n
 
     def cycle(self, word):
@@ -25,12 +25,25 @@ class nGram:
             self.words.remove(self.words[0])
         self.words.append(word)
 
-    def as_key():
+    def as_key(self):
         return string.join(self.words)
 
+    def as_pair(self):
+        return (self.words[0:-1], self.words[-1])
+
+    def as_key(self):
+        pair = self.as_pair()
+        return string.join(pair[0])
+
+    def as_list(self):
+        return self.words
+
+    def last_word(self):
+        return self.words[-1]
+
 class MarkovDictionary:
-    """ Manages a nested dict of ngramual word occurance probabilities """
-    def __init__(self, source_text=None, depth=3, chunk=5):
+    """ Manages a nested dict of word occurance probabilities """
+    def __init__(self, source_text=None, depth=2):
       # there must be at least depth + 1 words in the source text
       # depth cannot be less than 2
       self.depth = depth
@@ -39,32 +52,28 @@ class MarkovDictionary:
       if source_text != None:
         self.engorge(source_text)
 
-    def __is_buffer_full(self, word_buffer):
-        return len(word_buffer) == self.depth
-
     def engorge(self, source_text):
       words = clean(source_text).split()
-      word_buffer = []
+      window = nGramBuffer(self.depth)
       for word in words:
-          if self.__is_buffer_full(word_buffer):
-              word_buffer.remove(word_buffer[0])
-          word_buffer.append(word)
-          if self.__is_buffer_full(word_buffer):
-              self.__upsert_words(word_buffer)
-      # the rest of this method is special case handling for the text's end
-      # (it links the first word with the final ngram)
-      word_buffer.remove(word_buffer[0])
-      word_buffer.append(words[0])
-      self.__upsert_words(word_buffer)
+          window.cycle(word) 
+          if window.is_full():
+              self.__upsert_buffer(window)
+      # handle special case - first word should follow last key
+      window.cycle(words[0])
+      self.__upsert_buffer(window)
+      # handle another special case (one window should straddle text boundry)
+      window.cycle(words[1])
+      self.__upsert_buffer(window)
 
-    def __upsert_words(self, words):
-      ngram = string.join(words[0:-1])
-      word = words[-1]
-      if self.ngrams.get(ngram, None) == None:
-          self.ngrams[ngram] = {}
-      if self.ngrams[ngram].get(word, None) == None:
-          self.ngrams[ngram][word] = 0
-      self.ngrams[ngram][word] += 1
+    def __upsert_buffer(self, ngram_buffer):
+      key = ngram_buffer.as_key()
+      val = ngram_buffer.last_word()
+      if self.ngrams.get(key, None) == None:
+          self.ngrams[key] = {}
+      if self.ngrams[key].get(val, None) == None:
+          self.ngrams[key][val] = 0
+      self.ngrams[key][val] += 1
 
     def get_lexicon(self):
       words = []

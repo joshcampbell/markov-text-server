@@ -1,8 +1,18 @@
 # Needful
 
+- Refactor markov dictionary to use n-gram class
 - Get better at handling obscure unicode punctuation
   - String#isalnum() lets a lot of shit through
   - Consider some kinds of punctuation as words?
+
+# Ports of Corey's Features
+
+- aphorism mode
+- chatlog mode
+- freeverse mode
+- identification of words beginning sentences/clauses
+- more form controls on the webapp
+- cutup mode
 
 # Ideas
 
